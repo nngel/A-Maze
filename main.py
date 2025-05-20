@@ -12,6 +12,7 @@ import argparse
 from maze_generator import MazeGenerator
 from astar import AStar
 from visualizer import MazeVisualizer
+from typing import Optional
 
 
 def main():
@@ -20,12 +21,31 @@ def main():
     parser.add_argument("--width", type=int, default=10, help="Maze width (default: 10)")
     parser.add_argument("--height", type=int, default=10, help="Maze height (default: 10)")
     parser.add_argument("--text", action="store_true", help="Use text visualization instead of matplotlib")
+    parser.add_argument("--pygame", action="store_true", help="Use interactive Pygame visualization")
     parser.add_argument("--show-explored", action="store_true", help="Show explored nodes in visualization")
+    parser.add_argument("--cell-size", type=int, default=40, help="Cell size in pixels for Pygame visualization (default: 40)")
+    parser.add_argument("--seed", type=int, default=None, help="Seed for maze generation (default: random)")
     args = parser.parse_args()
 
+    if args.pygame:
+        # Use the Pygame visualization
+        try:
+            from pygame_visualizer import run_pygame_visualizer
+            print(f"Starting Pygame visualization with a {args.width}x{args.height} maze...")
+            if args.seed is not None:
+                print(f"Using seed: {args.seed}")
+            run_pygame_visualizer(args.width, args.height, args.cell_size, seed=args.seed)
+            # The Pygame visualization has its own maze generation and A* implementation
+            return
+        except ImportError:
+            print("Pygame visualization couldn't be loaded. Make sure pygame is installed.")
+            print("Falling back to default visualization.")
+    
     # Generate a random maze
     print(f"Generating a {args.width}x{args.height} maze...")
-    maze_generator = MazeGenerator(args.width, args.height)
+    if args.seed is not None:
+        print(f"Using seed: {args.seed}")
+    maze_generator = MazeGenerator(args.width, args.height, seed=args.seed)
     walls = maze_generator.generate()
     
     # Define start and end points

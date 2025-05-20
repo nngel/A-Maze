@@ -1,12 +1,19 @@
 import random
-from typing import List, Tuple, Set
+from typing import List, Tuple, Set, Optional
 
 
 class MazeGenerator:
-    def __init__(self, width: int, height: int):
-        """Initialize a maze generator with given dimensions."""
+    def __init__(self, width: int, height: int, seed: Optional[int] = None):
+        """Initialize a maze generator with given dimensions and optional seed.
+        
+        Args:
+            width: Width of the maze in cells
+            height: Height of the maze in cells
+            seed: Optional seed for the random number generator for reproducible mazes
+        """
         self.width = width
         self.height = height
+        self.seed = seed
         # Maze walls represented as a set of wall coordinates
         self.walls = set()
         # Visited cells during maze generation
@@ -19,6 +26,14 @@ class MazeGenerator:
             Set of wall tuples. Each wall is represented as a tuple of two cells.
             A wall between (0,0) and (1,0) would be ((0,0), (1,0)).
         """
+        # Reset state
+        self.walls = set()
+        self.visited = set()
+        
+        # Set the random seed if provided
+        if self.seed is not None:
+            random.seed(self.seed)
+        
         # Initialize all walls
         for x in range(self.width):
             for y in range(self.height):
@@ -30,6 +45,10 @@ class MazeGenerator:
         # Start from the top-left corner
         self._carve_paths((0, 0))
         
+        # Reset the random seed to avoid affecting other random processes
+        if self.seed is not None:
+            random.seed(None)
+            
         return self.walls
     
     def _carve_paths(self, cell: Tuple[int, int]):
