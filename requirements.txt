@@ -5,6 +5,7 @@ kiwisolver==1.4.8
 matplotlib==3.10.3
 numpy==2.2.6
 packaging==25.0
+panda3d==1.10.15
 pillow==11.2.1
 pygame==2.6.1
 pyparsing==3.2.3
