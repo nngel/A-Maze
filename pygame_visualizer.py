@@ -19,6 +19,7 @@ GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 YELLOW = (255, 255, 0)
 PURPLE = (128, 0, 128)
+MAGENTA = (255, 0, 255)  # New color for explored nodes
 LIGHT_BLUE = (173, 216, 230)
 GRAY = (200, 200, 200)
 DARK_BLUE = (0, 0, 139)
@@ -151,25 +152,13 @@ class PygameMazeVisualizer:
         )
         pygame.draw.rect(self.screen, WHITE, maze_rect)
         
-        # Draw explored nodes if enabled - only draw if not part of the path
-        if self.show_exploration and self.path:
-            # Get path cells as a set for faster lookups
-            path_cells = set(self.path)
-            
-            for cell in self.explored_nodes:
-                # Only draw explored cells that are not part of the path
-                if cell not in path_cells:
-                    pixel_x, pixel_y = self.cell_to_pixel(cell)
-                    pygame.draw.rect(self.screen, LIGHT_BLUE,
-                                    (pixel_x + 3, pixel_y + 3, 
-                                     self.cell_size - 6, self.cell_size - 6))
-        elif self.show_exploration:
-            # No path, just draw all explored nodes
+        # Draw explored nodes if enabled - draw ALL explored nodes (including those under the path)
+        if self.show_exploration:
             for cell in self.explored_nodes:
                 pixel_x, pixel_y = self.cell_to_pixel(cell)
-                pygame.draw.rect(self.screen, LIGHT_BLUE,
-                                (pixel_x + 3, pixel_y + 3, 
-                                 self.cell_size - 6, self.cell_size - 6))
+                pygame.draw.rect(self.screen, MAGENTA,
+                               (pixel_x + 3, pixel_y + 3, 
+                                self.cell_size - 6, self.cell_size - 6))
         
         # Draw the path on top of explored nodes
         if self.path:
@@ -343,7 +332,7 @@ class PygameMazeVisualizer:
             (GREEN, "Start position"),
             (RED, "End position"),
             (YELLOW, "Path"),
-            (LIGHT_BLUE, "Explored nodes")
+            (MAGENTA, "Explored nodes")
         ]
         
         for i, (color, text) in enumerate(legends):
