@@ -10,6 +10,8 @@ class AStar:
         self.walls = walls
         # Track the nodes we've explored for visualization
         self.explored_nodes = set()
+        # Track the order in which nodes are explored
+        self.explored_order = []
     
     def _get_neighbors(self, node: Tuple[int, int]) -> List[Tuple[int, int]]:
         """Get valid neighboring cells for a given node."""
@@ -45,6 +47,7 @@ class AStar:
         """
         # Reset explored nodes
         self.explored_nodes = set()
+        self.explored_order = []
         
         # Priority queue for open nodes
         open_set = []
@@ -70,6 +73,7 @@ class AStar:
             
             # Add to explored nodes for visualization
             self.explored_nodes.add(current)
+            self.explored_order.append(current)  # Record the exact order of exploration
             
             # If we reached the goal, reconstruct and return the path
             if current == end:
@@ -101,3 +105,7 @@ class AStar:
     def get_explored_nodes(self) -> Set[Tuple[int, int]]:
         """Return the set of nodes that were explored during the search."""
         return self.explored_nodes
+        
+    def get_explored_order(self) -> List[Tuple[int, int]]:
+        """Return the ordered list of nodes as they were explored during the search."""
+        return self.explored_order

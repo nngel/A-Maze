@@ -364,30 +364,52 @@ class PygameMazeVisualizer:
         self.explored_nodes = self.astar.get_explored_nodes()
     
     def animate_pathfinding(self):
-        """Animate the A* pathfinding process."""
+        """Animate the A* pathfinding process.
+        
+        Animation happens in two phases:
+        1. Show nodes as they're explored by the A* algorithm (slower)
+        2. Highlight the final shortest path from start to end (faster)
+        """
         self.animation_in_progress = True
+        
+        # Hide path initially for clean animation start
         self.explored_nodes = set()
+        temp_path = self.path
+        self.path = None
         
         # Create a new A* instance for animation
         astar = AStar(self.width, self.height, self.walls)
         
         # Get the step by step process of the algorithm
         path = astar.find_path(self.start_pos, self.end_pos)
-        self.path = path
         
-        # For animation, we'll use the explored nodes from A*
-        explored_sequence = list(astar.get_explored_nodes())
+        # Phase 1: Animate the exploration using the ordered list of explored nodes
+        explored_sequence = astar.get_explored_order()
         
-        # Sort the explored nodes by distance from start (approximate)
-        explored_sequence.sort(key=lambda pos: abs(pos[0] - self.start_pos[0]) + abs(pos[1] - self.start_pos[1]))
+        # Animation speeds - make exploration (magenta) slower than path tracing (yellow)
+        exploration_speed = 80  # ms per step for exploration phase (slower)
+        path_speed = 40  # ms per step for path animation (faster)
         
-        # Animate the exploration
-        self.explored_nodes = set()
+        # Animate the exploration - using the actual order from A*
+        font = pygame.font.SysFont('Arial', 20)
+        phase_text = font.render("Phase 1: Exploring nodes...", True, BLACK)
+        
         for node in explored_sequence:
             self.explored_nodes.add(node)
             self.draw_maze()
+            
+            # Show phase indicator text
+            phase_rect = pygame.Rect(
+                self.control_panel_width + self.margin,
+                10,
+                300,
+                30
+            )
+            pygame.draw.rect(self.screen, WHITE, phase_rect)
+            self.screen.blit(phase_text, (self.control_panel_width + self.margin + 10, 15))
+            
             pygame.display.flip()
-            pygame.time.delay(self.animation_speed)
+            pygame.time.delay(exploration_speed)
             
             # Check for quit events during animation
             for event in pygame.event.get():
@@ -399,8 +421,93 @@ class PygameMazeVisualizer:
                         pygame.quit()
                         sys.exit()
         
-        # Set the final result
-        self.explored_nodes = set(explored_sequence)
+        # Phase 2: Animate the final path
+        phase_text = font.render("Phase 2: Showing optimal path...", True, BLACK)
+        
+        if path:
+            # Animate each segment of the path
+            for i in range(len(path) - 1):
+                # Redraw the maze without the path
+                self.draw_maze()
+                
+                # Draw path segments up to current point
+                for j in range(i + 1):
+                    # Get current and next cell in path
+                    current_cell = path[j]
+                    next_cell = path[j + 1]
+                    
+                    # Don't draw over start/end positions
+                    if current_cell != self.start_pos and current_cell != self.end_pos:
+                        pixel_x, pixel_y = self.cell_to_pixel(current_cell)
+                        pygame.draw.rect(self.screen, YELLOW,
+                                      (pixel_x + 5, pixel_y + 5, 
+                                       self.cell_size - 10, self.cell_size - 10))
+                    
+                    # Draw the current active segment with different color/thickness
+                    if j == i: # Current active segment
+                        pixel_x1, pixel_y1 = self.cell_to_pixel(current_cell)
+                        pixel_x2, pixel_y2 = self.cell_to_pixel(next_cell)
+                        
+                        # Draw a highlight between the cells - a thicker, brighter line
+                        if next_cell != self.end_pos:
+                            center_x2, center_y2 = (pixel_x2 + self.cell_size // 2, 
+                                                   pixel_y2 + self.cell_size // 2)
+                            pygame.draw.rect(self.screen, YELLOW,
+                                          (center_x2 - 10, center_y2 - 10, 20, 20))
+                
+                # Show path phase indicator text
+                phase_rect = pygame.Rect(
+                    self.control_panel_width + self.margin,
+                    10,
+                    300,
+                    30
+                )
+                pygame.draw.rect(self.screen, WHITE, phase_rect)
+                self.screen.blit(phase_text, (self.control_panel_width + self.margin + 10, 15))
+                
+                # Redraw start and end points (always on top)
+                start_pixel_x, start_pixel_y = self.cell_to_pixel(self.start_pos)
+                end_pixel_x, end_pixel_y = self.cell_to_pixel(self.end_pos)
+                
+                pygame.draw.rect(self.screen, GREEN,
+                                (start_pixel_x + 5, start_pixel_y + 5, 
+                                 self.cell_size - 10, self.cell_size - 10))
+                pygame.draw.rect(self.screen, RED,
+                                (end_pixel_x + 5, end_pixel_y + 5, 
+                                 self.cell_size - 10, self.cell_size - 10))
+                
+                pygame.display.flip()
+                pygame.time.delay(path_speed)
+                
+                # Check for quit events during path animation
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+                    elif event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_q:
+                            pygame.quit()
+                            sys.exit()
+            
+            # Restore the path for normal rendering
+            self.path = path
+            
+            # Final render showing the complete path
+            self.draw_maze()
+            phase_rect = pygame.Rect(
+                self.control_panel_width + self.margin,
+                10,
+                300,
+                30
+            )
+            pygame.draw.rect(self.screen, WHITE, phase_rect)
+            final_text = font.render("Pathfinding complete!", True, BLACK)
+            self.screen.blit(final_text, (self.control_panel_width + self.margin + 10, 15))
+            pygame.display.flip()
+        else:
+            # If no path was found, restore the original path
+            self.path = temp_path
+        
         self.animation_in_progress = False
     
     def run(self):
